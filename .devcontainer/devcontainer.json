@@ -1,0 +1,20 @@
+{
+  "name": "ERP Backend (Django)",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Django API Server",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  }
+}

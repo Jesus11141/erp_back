@@ -1,0 +1,47 @@
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Sensitive Media, Certificates & Signatures
+media/
+*.p12
+*.pem
+*.key
+*.crt
+
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Databases
+*.sqlite3
+*.db
+
+# Builds & Distributions
+dist/
+build/
+*.egg-info/
+
+# Temporary, Scraping & Scratch Files
+*.html
+*.png
+*.log
+scratch/
+pruebas/
+test_*.py
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
