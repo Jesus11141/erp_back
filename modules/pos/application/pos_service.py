@@ -286,11 +286,12 @@ class POSService:
                 
         sale_items = []
         for i in items:
-            prod_id = i.get('product_id')
+            raw_prod_id = i.get('product_id')
+            prod_id = int(raw_prod_id) if (raw_prod_id and str(raw_prod_id).isdigit()) else 0
             qty = Decimal(str(i['quantity']))
             price_u = Decimal(str(i['unit_price']))
 
-            if prod_id:
+            if prod_id > 0:
                 try:
                     from modules.inventario.application.cotizador_service import QuotationService
                     scaled_price, rule = QuotationService.resolve_unit_price(tenant_id, prod_id, qty)
@@ -395,6 +396,7 @@ class POSService:
             if invoice_result:
                 sale.invoice_id = invoice_result.get('invoice_id')
                 sale.invoice_number = invoice_result.get('invoice_number')
+                sale.access_key = invoice_result.get('access_key')
                 self._sale_repo.save(sale)
                 
                 # Check parameter if it's nota de venta to send to SRI

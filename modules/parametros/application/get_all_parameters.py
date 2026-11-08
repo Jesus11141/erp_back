@@ -1,4 +1,4 @@
-﻿from ..domain.entities import Parameter, CATALOG
+from ..domain.entities import Parameter, CATALOG
 from ..domain.repositories import ParameterRepository
 from typing import Any
 
@@ -13,7 +13,7 @@ class GetAllParameters:
             result[module] = {}
             for key, info in keys.items():
                 param = self.repo.get(tenant_id, module, key)
-                value = param.value if (param and param.value) else info['default']
+                value = param.value if (param and param.value is not None) else info['default']
                 if module == 'general' and key == 'logo_url' and not value:
                     logo = self.repo.get_tenant_logo_url(tenant_id)
                     if logo:

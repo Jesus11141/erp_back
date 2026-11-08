@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -15,8 +16,8 @@ class AccountsView(APIView):
         self._service = AccountingService(self._repo)
 
     def get(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         accounts = self._repo.list_accounts(request.tenant.id)
         if not accounts:
@@ -72,8 +73,8 @@ class AccountsView(APIView):
 
 
     def post(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
 
         code     = request.data.get('code', '').strip()
         name     = request.data.get('name', '').strip()
@@ -111,8 +112,8 @@ class AccountsView(APIView):
 
 class AccountDetailView(APIView):
     def put(self, request, account_id):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
             
         from modules.contabilidad.infrastructure.django_models import AccountModel
         acc = AccountModel.objects.filter(id=account_id, tenant_id=request.tenant.id).first()
@@ -131,8 +132,8 @@ class AccountDetailView(APIView):
         return Response({'status': 'success', 'message': 'Account updated'})
 
     def delete(self, request, account_id):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
             
         from modules.contabilidad.infrastructure.django_models import AccountModel, JournalEntryLineModel
         acc = AccountModel.objects.filter(id=account_id, tenant_id=request.tenant.id).first()
@@ -152,8 +153,8 @@ class JournalEntriesView(APIView):
         self._service = AccountingService(self._repo)
 
     def get(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         entries = self._repo.get_journal_entries(request.tenant.id)
         return Response([{
@@ -173,8 +174,8 @@ class JournalEntriesView(APIView):
         } for entry in entries])
 
     def post(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         try:
             date_str   = request.data.get('date')
             entry_date = date.fromisoformat(date_str[:10]) if date_str else date.today()
@@ -209,8 +210,8 @@ class JournalEntryDetailView(APIView):
         self._repo = DjangoAccountingRepository()
 
     def get(self, request, entry_id):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         entry = self._repo.get_journal_entry_by_id(request.tenant.id, entry_id)
         if not entry:
@@ -236,8 +237,8 @@ from ..django_models import CentroCostoModel
 
 class CentrosCostosView(APIView):
     def get(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         ccs = CentroCostoModel.objects.filter(tenant_id=request.tenant.id).order_by('code')
         return Response([{
@@ -250,8 +251,8 @@ class CentrosCostosView(APIView):
         } for cc in ccs])
 
     def post(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         code = request.data.get('code', '').strip()
         name = request.data.get('name', '').strip()
@@ -282,8 +283,8 @@ class CentrosCostosView(APIView):
 
 class CentroCostoDetailView(APIView):
     def put(self, request, cc_id):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         
         try:
             cc = CentroCostoModel.objects.get(tenant_id=request.tenant.id, id=cc_id)
@@ -316,8 +317,8 @@ from django.utils.decorators import method_decorator
 @method_decorator(csrf_exempt, name='dispatch')
 class SeedAccountsView(APIView):
     def post(self, request):
-        if not request.tenant:
-            return Response({'error': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
             
         from modules.contabilidad.infrastructure.django_models import AccountModel
         
@@ -361,3 +362,31 @@ class SeedAccountsView(APIView):
             )
             
         return Response({'status': 'success', 'message': 'Plan de Cuentas generado'})
+
+
+class ExportAccountsExcelView(APIView):
+    def get(self, request):
+        if not request.tenant or not request.tenant.has_module('contabilidad'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
+            
+        from modules.contabilidad.infrastructure.django_models import AccountModel
+        from modules.reportes.infrastructure.excel_generator import generate_chart_of_accounts_excel
+        from modules.parametros.infrastructure.repository_impl import DjangoParameterRepository
+        from modules.parametros.application.use_cases import GetAllParameters
+
+        cuentas = list(AccountModel.objects.filter(tenant_id=request.tenant.id).order_by('code').values('code', 'name', 'type'))
+        
+        repo = DjangoParameterRepository()
+        params = GetAllParameters(repo).execute(request.tenant.id)
+        
+        tenant_dict = {
+            'name': getattr(request.tenant, 'name', 'ERP'),
+            'primary_color': getattr(request.tenant, 'primary_color', '#1976D2'),
+            'secondary_color': getattr(request.tenant, 'secondary_color', '#1565C0'),
+            'logo_url': getattr(request.tenant, 'logo_url', None),
+        }
+        
+        excel_bytes = generate_chart_of_accounts_excel(cuentas, params, tenant_dict)
+        response = HttpResponse(excel_bytes, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="Plan_de_Cuentas.xlsx"'
+        return response

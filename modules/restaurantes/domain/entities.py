@@ -41,3 +41,14 @@ class RestaurantOrder:
     total: Decimal
     created_at: datetime
     lines: List[RestaurantOrderLine] = field(default_factory=list)
+    factura_id: Optional[int] = None
+    factura_numero: Optional[str] = None
+    clave_acceso: Optional[str] = None
+    cliente_nombre: Optional[str] = None
+    cliente_identificacion: Optional[str] = None
+    metodo_pago: Optional[str] = None
+
+@dataclass
+class RecipeIngredient:
+    product_id: int
+    quantity: Decimal

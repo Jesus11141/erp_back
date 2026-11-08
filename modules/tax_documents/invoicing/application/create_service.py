@@ -40,6 +40,11 @@ class CreateInvoice:
         if pto == '000':
             raise BusinessError('El parámetro "punto_emision" no está configurado en el sistema.', field='punto_emision', code='CONFIG_MISSING')
 
+        target_date = data.get('date') or date.today()
+        user_role = data.get('user_role', 'vendedor')
+        from modules.contabilidad.application.period_service import validate_accounting_period
+        validate_accounting_period(tenant_id, target_date, user_role=user_role, action_desc='emitir facturas de venta')
+
         number = self.repo.next_number(
             tenant_id,
             estab,
@@ -63,11 +68,11 @@ class CreateInvoice:
             tenant_id=tenant_id,
             document_type=document_type,
             number=number,
-            client=data['client'],
-            client_identification=data.get('client_identification', '9999999999999'),
+            client=data.get('client') or ('CONSUMIDOR FINAL' if data.get('client_id_type') == '07' else 'CLIENTE'),
+            client_identification=data.get('client_identification') or ('9999999999999' if data.get('client_id_type') == '07' else '9999999999999'),
             client_id_type=data.get('client_id_type', '07'),
-            client_address=data.get('client_address', ''),
-            client_email=data.get('client_email', ''),
+            client_address=data.get('client_address') or 'S/N',
+            client_email=data.get('client_email') or '',
             date=date.today(),
             status='draft',
             items=items,

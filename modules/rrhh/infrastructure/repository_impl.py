@@ -16,6 +16,10 @@ class DjangoEmployeeRepository(EmployeeRepository):
             hire_date=m.hire_date,
             salary=m.salary,
             contract_type=m.contract_type,
+            identification=getattr(m, 'identification', '') or '',
+            bank_name=getattr(m, 'bank_name', '') or '',
+            bank_account_type=getattr(m, 'bank_account_type', 'ahorros') or 'ahorros',
+            bank_account_number=getattr(m, 'bank_account_number', '') or '',
             cash_register_pin=m.pin_caja,
             active=m.active,
             has_iess=m.has_iess,
@@ -41,6 +45,7 @@ class DjangoEmployeeRepository(EmployeeRepository):
         data = {
             'tenant_id': e.tenant_id,
             'name': e.name,
+            'identification': e.identification,
             'email': e.email,
             'phone': e.phone,
             'position': e.position,
@@ -48,6 +53,9 @@ class DjangoEmployeeRepository(EmployeeRepository):
             'salary': e.salary,
             'hire_date': e.hire_date,
             'contract_type': e.contract_type,
+            'bank_name': e.bank_name,
+            'bank_account_type': e.bank_account_type,
+            'bank_account_number': e.bank_account_number,
             'pin_caja': e.cash_register_pin,
             'active': e.active,
             'has_iess': e.has_iess,
@@ -142,7 +150,8 @@ class DjangoPayrollRepository(PayrollRepository):
             fourteenth_salary=m.fourteenth_salary,
             reserve_funds=m.reserve_funds,
             net_salary=m.net_salary,
-            status=m.status
+            status=m.status,
+            employee_identification=getattr(m.employee, 'identification', '') if getattr(m, 'employee', None) else ''
         )
 
     def save(self, n: Payroll) -> Payroll:

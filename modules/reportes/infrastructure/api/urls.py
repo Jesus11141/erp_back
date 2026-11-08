@@ -2,6 +2,8 @@ from django.urls import path
 from modules.reportes.application.use_cases import GetDashboard
 from modules.reportes.infrastructure.api.views import (
     InvoicePDFView, QuotePDFView,
+    CreditNotePDFView, WithholdingPDFView,
+    DispatchGuidePDFView, PurchaseSettlementPDFView,
     SalesExcelView, InventoryExcelView,
     ClientsExcelView, PayrollExcelView,
     ProfitMarginExcelView, ProfitMarginPDFView,
@@ -58,6 +60,10 @@ urlpatterns = [
     path('bi-dashboard/',                       BIDashboardView.as_view()),
     path('pdf/invoice/<int:invoice_id>/',        InvoicePDFView.as_view()),
     path('pdf/quotation/<int:quote_id>/',  QuotePDFView.as_view()),
+    path('pdf/credit-note/<int:nc_id>/',         CreditNotePDFView.as_view()),
+    path('pdf/withholding/<int:ret_id>/',        WithholdingPDFView.as_view()),
+    path('pdf/dispatch-guide/<int:guide_id>/',   DispatchGuidePDFView.as_view()),
+    path('pdf/purchase-settlement/<int:settlement_id>/', PurchaseSettlementPDFView.as_view()),
     path('excel/sales/',                        SalesExcelView.as_view()),
     path('excel/inventory/',                    InventoryExcelView.as_view()),
     path('excel/customers/',                      ClientsExcelView.as_view()),

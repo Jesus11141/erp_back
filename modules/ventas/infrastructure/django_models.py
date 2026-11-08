@@ -81,6 +81,7 @@ class PaymentMethodModel(models.Model):
     name = models.CharField(max_length=100, db_column='nombre')
     active = models.BooleanField(default=True, db_column='activo')
     requires_reference = models.BooleanField(default=False, db_column='requiere_referencia')
+    sri_code = models.CharField(max_length=2, default='01', db_column='codigo_sri', blank=True, null=True)
 
     class Meta:
         app_label = 'ventas'

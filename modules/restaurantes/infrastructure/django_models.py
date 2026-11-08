@@ -40,6 +40,12 @@ class PedidoRestauranteModel(models.Model):
     mesa = models.ForeignKey(MesaModel, on_delete=models.CASCADE, related_name='pedidos_activos')
     estado = models.CharField(max_length=20, choices=ESTADOS, default='abierto')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    factura_id = models.IntegerField(null=True, blank=True)
+    factura_numero = models.CharField(max_length=50, null=True, blank=True)
+    clave_acceso = models.CharField(max_length=49, null=True, blank=True)
+    cliente_nombre = models.CharField(max_length=200, null=True, blank=True)
+    cliente_identificacion = models.CharField(max_length=20, null=True, blank=True)
+    metodo_pago = models.CharField(max_length=10, default='01')
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
     
@@ -68,4 +74,19 @@ class LineaPedidoRestauranteModel(models.Model):
     
     class Meta:
         db_table = 'restaurantes_linea_pedido'
+        app_label = 'restaurantes'
+
+class PlatoModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant = models.ForeignKey(TenantModel, on_delete=models.CASCADE)
+    categoria = models.CharField(max_length=100, default='General')
+    nombre = models.CharField(max_length=200)
+    precio = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    disponible = models.BooleanField(default=True)
+    # Hidden inventory product (type 'dish') that holds the recipe; created lazily on first recipe save
+    product_id = models.IntegerField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'restaurantes_plato'
         app_label = 'restaurantes'

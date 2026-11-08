@@ -13,6 +13,7 @@ class EmployeeModel(models.Model):
     CONTRACT_CHOICES = [('tiempo_completo','Tiempo Completo'),('medio_tiempo','Medio Tiempo'),('honorarios','Honorarios')]
     tenant_id = models.IntegerField()
     name = models.CharField(max_length=150, db_column='nombre')
+    identification = models.CharField(max_length=20, blank=True, default='', db_column='cedula')
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True, db_column='telefono')
     position = models.CharField(max_length=100, db_column='puesto')
@@ -22,6 +23,11 @@ class EmployeeModel(models.Model):
     contract_type = models.CharField(max_length=20, choices=CONTRACT_CHOICES, default='tiempo_completo', db_column='tipo_contrato')
     pin_caja = models.CharField(max_length=50, blank=True, default='', db_column='pin_caja')
     active = models.BooleanField(default=True, db_column='activo')
+    
+    # Datos Bancarios para Acreditación de Nómina
+    bank_name = models.CharField(max_length=100, blank=True, default='', db_column='banco')
+    bank_account_type = models.CharField(max_length=20, blank=True, default='ahorros', db_column='tipo_cuenta_banco')
+    bank_account_number = models.CharField(max_length=50, blank=True, default='', db_column='numero_cuenta_banco')
     
     # Configuraciones de Nómina (Ecuador)
     has_iess = models.BooleanField(default=False, db_column='tiene_iess')

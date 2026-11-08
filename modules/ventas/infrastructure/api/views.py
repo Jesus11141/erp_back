@@ -189,15 +189,21 @@ class OrdersView(APIView):
 
 class PaymentMethodsView(APIView):
     def get(self, request):
-        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos')):
+        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos') or request.tenant.has_module('facturacion') or request.tenant.has_module('accounting')):
             return Response({'error': 'Module not available'}, status=status.HTTP_403_FORBIDDEN)
         repo = DjangoPaymentMethodRepository()
         include_inactive = request.query_params.get('all', 'false').lower() == 'true'
         methods = repo.find_all(request.tenant.id, include_inactive)
-        return Response([{'id': m.id, 'name': m.name, 'active': m.active, 'requires_reference': m.requires_reference} for m in methods])
+        return Response([{
+            'id': m.id,
+            'name': m.name,
+            'active': m.active,
+            'requires_reference': m.requires_reference,
+            'sri_code': getattr(m, 'sri_code', '01') or '01'
+        } for m in methods])
 
     def post(self, request):
-        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos')):
+        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos') or request.tenant.has_module('facturacion') or request.tenant.has_module('accounting')):
             return Response({'error': 'Module not available'}, status=status.HTTP_403_FORBIDDEN)
         repo = DjangoPaymentMethodRepository()
         pm = PaymentMethod(
@@ -205,16 +211,23 @@ class PaymentMethodsView(APIView):
             tenant_id=request.tenant.id,
             name=request.data.get('name', ''),
             active=request.data.get('active', True),
-            requires_reference=request.data.get('requires_reference', False)
+            requires_reference=request.data.get('requires_reference', False),
+            sri_code=request.data.get('sri_code') or None
         )
         if not pm.name:
             return Response({'error': 'Name is required'}, status=status.HTTP_400_BAD_REQUEST)
         saved = repo.save(pm)
-        return Response({'id': saved.id, 'name': saved.name, 'active': saved.active, 'requires_reference': saved.requires_reference}, status=status.HTTP_201_CREATED)
+        return Response({
+            'id': saved.id,
+            'name': saved.name,
+            'active': saved.active,
+            'requires_reference': saved.requires_reference,
+            'sri_code': getattr(saved, 'sri_code', '01') or '01'
+        }, status=status.HTTP_201_CREATED)
 
 class PaymentMethodDetailView(APIView):
     def put(self, request, pk):
-        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos')):
+        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos') or request.tenant.has_module('facturacion') or request.tenant.has_module('accounting')):
             return Response({'error': 'Module not available'}, status=status.HTTP_403_FORBIDDEN)
         repo = DjangoPaymentMethodRepository()
         pm = repo.find_by_id(pk, request.tenant.id)
@@ -224,14 +237,22 @@ class PaymentMethodDetailView(APIView):
         pm.name = request.data.get('name', pm.name)
         pm.active = request.data.get('active', pm.active)
         pm.requires_reference = request.data.get('requires_reference', pm.requires_reference)
+        if 'sri_code' in request.data:
+            pm.sri_code = request.data.get('sri_code')
         if not pm.name:
             return Response({'error': 'Name is required'}, status=status.HTTP_400_BAD_REQUEST)
         
         saved = repo.save(pm)
-        return Response({'id': saved.id, 'name': saved.name, 'active': saved.active, 'requires_reference': saved.requires_reference})
+        return Response({
+            'id': saved.id,
+            'name': saved.name,
+            'active': saved.active,
+            'requires_reference': saved.requires_reference,
+            'sri_code': getattr(saved, 'sri_code', '01') or '01'
+        })
 
     def delete(self, request, pk):
-        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos')):
+        if not request.tenant or not (request.tenant.has_module('ventas') or request.tenant.has_module('pos') or request.tenant.has_module('facturacion') or request.tenant.has_module('accounting')):
             return Response({'error': 'Module not available'}, status=status.HTTP_403_FORBIDDEN)
         repo = DjangoPaymentMethodRepository()
         repo.delete(pk, request.tenant.id)

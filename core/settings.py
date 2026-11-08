@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_apps.auditoria',
     'django_apps.restaurantes',
     'django_apps.accounting',
+    'django_apps.compras',
 ]
 
 AUTH_USER_MODEL = 'auth_module.UserModel'
@@ -51,6 +52,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
     ],
 }
 

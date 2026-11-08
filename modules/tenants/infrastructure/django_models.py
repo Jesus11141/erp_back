@@ -18,6 +18,8 @@ MODULE_CHOICES = [
     ('restaurantes', 'Restaurantes y Gastronomía'),
     ('sri_perfil', 'Consulta RUC Automática'),
     ('sri_facturas', 'Extracción Facturas (Robot)'),
+    ('notas_venta', 'Notas de Venta / Cotizaciones'),
+    ('reportes', 'Reportes Avanzados'),
 ]
 
 from django.utils import timezone

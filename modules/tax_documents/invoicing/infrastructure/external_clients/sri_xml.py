@@ -98,11 +98,11 @@ def generate_xml(factura, emisor: dict) -> str:
     _t(it, 'razonSocial', emisor['razon_social'])
     _t(it, 'nombreComercial', emisor.get('nombre_comercial', emisor['razon_social']))
     _t(it, 'ruc', emisor['ruc'])
-    _t(it, 'claveAcceso', factura.clave_acceso)
+    _t(it, 'claveAcceso', getattr(factura, 'clave_acceso', getattr(factura, 'access_key', '')))
     _t(it, 'codDoc', '01')
     _t(it, 'estab', emisor.get('establecimiento', '001'))
     _t(it, 'ptoEmi', emisor.get('punto_emision', '001'))
-    _t(it, 'secuencial', factura.numero.split('-')[-1].zfill(9))
+    _t(it, 'secuencial', (getattr(factura, 'numero', getattr(factura, 'number', '001-001-000000001'))).split('-')[-1].zfill(9))
     _t(it, 'dirMatriz', emisor['direccion'])
 
     # â”€â”€ infoFactura â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -112,10 +112,10 @@ def generate_xml(factura, emisor: dict) -> str:
     if emisor.get('contribuyente_especial'):
         _t(inf, 'contribuyenteEspecial', emisor['contribuyente_especial'])
     _t(inf, 'obligadoContabilidad', emisor.get('obligado_contabilidad', 'NO'))
-    _t(inf, 'tipoIdentificacionComprador', factura.cliente_tipo_id)
-    _t(inf, 'razonSocialComprador', factura.cliente)
-    _t(inf, 'identificacionComprador', factura.cliente_identificacion)
-    _t(inf, 'direccionComprador', factura.cliente_direccion or 'S/N')
+    _t(inf, 'tipoIdentificacionComprador', getattr(factura, 'cliente_tipo_id', getattr(factura, 'client_id_type', '07')) or '07')
+    _t(inf, 'razonSocialComprador', getattr(factura, 'cliente', getattr(factura, 'client', 'CONSUMIDOR FINAL')) or 'CONSUMIDOR FINAL')
+    _t(inf, 'identificacionComprador', getattr(factura, 'cliente_identificacion', getattr(factura, 'client_identification', '9999999999999')) or '9999999999999')
+    _t(inf, 'direccionComprador', getattr(factura, 'cliente_direccion', getattr(factura, 'client_address', 'S/N')) or 'S/N')
     _t(inf, 'totalSinImpuestos', str(subtotal_total))
     _t(inf, 'totalDescuento', '0.00')
 
@@ -138,7 +138,7 @@ def generate_xml(factura, emisor: dict) -> str:
     # pagos
     pagos = SubElement(inf, 'pagos')
     pago = SubElement(pagos, 'pago')
-    _t(pago, 'formaPago', '01')     # 01 = sin utilizaciÃ³n del sistema financiero
+    _t(pago, 'formaPago', getattr(factura, 'payment_method', '01') or '01')     # 01 = sin utilizaciÃ³n del sistema financiero
     _t(pago, 'total', str(total))
     _t(pago, 'plazo', '0')
     _t(pago, 'unidadTiempo', 'dias')
@@ -169,10 +169,11 @@ def generate_xml(factura, emisor: dict) -> str:
         _t(imp, 'valor', str(iva_item))
 
     # â”€â”€ infoAdicional â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    if factura.cliente_email:
+    cliente_email = getattr(factura, 'cliente_email', getattr(factura, 'client_email', ''))
+    if cliente_email:
         ia = SubElement(root, 'infoAdicional')
         campo = SubElement(ia, 'campoAdicional', nombre='email')
-        campo.text = factura.cliente_email
+        campo.text = str(cliente_email)
 
     xml_str = tostring(root, encoding='unicode')
     return '<?xml version="1.0" encoding="UTF-8"?>' + xml_str

@@ -25,6 +25,7 @@ class Product:
     vat_rate: str = '15'   # SRI Ecuador: '0', '5', '8', '15'
     active: bool = True
     is_composite: bool = False
+    product_type: str = 'goods'
     image: Optional[str] = None
 
     # SRI Ecuador VAT rate codes mapping

@@ -6,3 +6,12 @@ from .getter_service import ListInvoices
 from .create_credit_note import CreateCreditNote
 from .emit_credit_note_sri import EmitCreditNoteSRI
 from .check_credit_note_authorization_sri import CheckCreditNoteAuthorizationSRI
+from .create_withholding import CreateWithholding
+from .emit_withholding_sri import EmitWithholdingSRI
+from .check_withholding_authorization_sri import CheckWithholdingAuthorizationSRI
+from .create_dispatch_guide import CreateDispatchGuide
+from .emit_dispatch_guide_sri import EmitDispatchGuideSRI
+from .check_dispatch_guide_authorization_sri import CheckDispatchGuideAuthorizationSRI
+from .create_purchase_settlement import CreatePurchaseSettlement
+from .emit_purchase_settlement_sri import EmitPurchaseSettlementSRI
+from .check_purchase_settlement_authorization_sri import CheckPurchaseSettlementAuthorizationSRI

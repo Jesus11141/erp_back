@@ -227,13 +227,30 @@ class POSSaleView(APIView):
         if e := verificar_modulo(request): return e
         ventas = DjangoPOSSaleRepository().list_by_register(register_id, request.tenant.id)
         
+        invoice_ids = [v.invoice_id for v in ventas if getattr(v, 'invoice_id', None)]
+        invoices_map = {}
+        if invoice_ids:
+            try:
+                from modules.tax_documents.invoicing.infrastructure.django_models import InvoiceModel
+                invoices_qs = InvoiceModel.objects.filter(id__in=invoice_ids, tenant_id=request.tenant.id).values('id', 'number', 'access_key')
+                invoices_map = {inv['id']: inv for inv in invoices_qs}
+            except Exception:
+                pass
+
         return Response([{
             'id': v.id,
             'created_at': v.created_at,
             'payment_method': v.payment_method,
             'total': str(v.total),
+            'subtotal': str(v.subtotal),
+            'tax': str(getattr(v, 'vat_amount', '0.00')),
             'change': str(v.change),
             'status': v.status,
+            'customer_name': v.customer.name if v.customer else 'CONSUMIDOR FINAL',
+            'customer_identifier': v.customer.identifier if v.customer else '9999999999999',
+            'invoice_id': v.invoice_id,
+            'invoice_number': invoices_map.get(v.invoice_id, {}).get('number') if v.invoice_id else getattr(v, 'invoice_number', None),
+            'access_key': invoices_map.get(v.invoice_id, {}).get('access_key') if v.invoice_id else getattr(v, 'access_key', None),
             'items': [{
                 'description': i.description,
                 'quantity': str(i.quantity),
@@ -313,6 +330,7 @@ class POSSaleView(APIView):
             if sale.invoice_id:
                 resp['invoice_id'] = sale.invoice_id
                 resp['invoice_number'] = getattr(sale, 'invoice_number', None)
+                resp['access_key'] = getattr(sale, 'access_key', None)
             return Response(resp, status=status.HTTP_201_CREATED)
         except ValueError as e:
             import traceback

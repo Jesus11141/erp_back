@@ -9,6 +9,7 @@ from ...infrastructure.repository_impl import DjangoTenantRepository
 from ...application.use_cases import ActivateModule, DeactivateModule
 
 class TenantConfigView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -21,6 +22,7 @@ class TenantConfigView(APIView):
             'primary_color': t.primary_color,
             'secondary_color': t.secondary_color,
             'modules': t.modules,
+            'subscription_state': getattr(t, 'subscription_state', 'activa'),
         })
 
 import time

@@ -4,7 +4,8 @@ from .views import (
     DependentsView, DependentDetailView,
     SalaryHistoryView, LoansView, LoanDetailView,
     AttendancesView, PayrollsView, PayrollActionView, MassPayrollsView,
-    JobPositionView, JobPositionDetailView
+    JobPositionView, JobPositionDetailView,
+    IESSFlatFileView, PayrollPDFView
 )
 
 urlpatterns = [
@@ -20,5 +21,7 @@ urlpatterns = [
     path('attendances/', AttendancesView.as_view()),
     path('payrolls/', PayrollsView.as_view()),
     path('payrolls/generate-mass/', MassPayrollsView.as_view()),
+    path('payrolls/iess-file/', IESSFlatFileView.as_view(), name='payroll_iess_file'),
+    path('payrolls/<int:payroll_id>/pdf/', PayrollPDFView.as_view(), name='payroll_pdf'),
     path('payrolls/<int:payroll_id>/<str:action>/', PayrollActionView.as_view()),
 ]

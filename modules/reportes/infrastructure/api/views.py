@@ -2,7 +2,11 @@ from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from modules.reportes.infrastructure.pdf_generator import generate_invoice_pdf, generate_quote_pdf
+from modules.reportes.infrastructure.pdf_generator import (
+    generate_invoice_pdf, generate_quote_pdf,
+    generate_credit_note_pdf, generate_withholding_pdf,
+    generate_dispatch_guide_pdf, generate_purchase_settlement_pdf
+)
 from modules.reportes.infrastructure.excel_generator import (
     generate_sales_excel_report,
     generate_inventory_excel_report,
@@ -65,6 +69,185 @@ class InvoicePDFView(APIView):
             return response
         except InvoiceModel.DoesNotExist:
             return Response({'error': 'Invoice no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CreditNotePDFView(APIView):
+
+    def get(self, request, nc_id: int):
+        if error := _verify_tenant(request): return error
+        try:
+            from modules.tax_documents.invoicing.infrastructure.persistence.django_models import CreditNoteModel
+            m = CreditNoteModel.objects.get(id=nc_id, tenant_id=request.tenant.id)
+            items = [
+                {
+                    'main_code': i.main_code,
+                    'description': i.description,
+                    'quantity': str(i.quantity),
+                    'unit_price': str(i.unit_price),
+                    'discount': str(i.discount or '0'),
+                    'vat_rate': str(i.vat_rate or '15'),
+                }
+                for i in m.items.all()
+            ]
+            nc_data = {
+                'number': m.number,
+                'date': str(m.date),
+                'status': m.status,
+                'reason': m.get_reason_display() if hasattr(m, 'get_reason_display') else m.reason,
+                'client': m.client,
+                'client_identification': m.client_identification,
+                'origin_invoice_number': m.origin_invoice_number,
+                'origin_invoice_date': '',
+                'access_key': m.access_key,
+                'authorization_number': m.authorization_number,
+                'authorization_date': m.authorization_date,
+                'environment': m.environment,
+                'items': items,
+            }
+            params = _get_params(request.tenant.id)
+            pdf = generate_credit_note_pdf(nc_data, params, _tenant_dict(request.tenant))
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="nota-credito-{m.number}.pdf"'
+            return response
+        except CreditNoteModel.DoesNotExist:
+            return Response({'error': 'Nota de crédito no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class WithholdingPDFView(APIView):
+
+    def get(self, request, ret_id: int):
+        if error := _verify_tenant(request): return error
+        try:
+            from modules.tax_documents.invoicing.infrastructure.persistence.django_models import WithholdingModel
+            m = WithholdingModel.objects.get(id=ret_id, tenant_id=request.tenant.id)
+            items = [
+                {
+                    'type_code': i.type_code,
+                    'withholding_code': i.withholding_code,
+                    'tax_base': str(i.tax_base),
+                    'percentage': str(i.percentage),
+                    'withheld_value': str(i.withheld_value),
+                }
+                for i in m.items.all()
+            ]
+            ret_data = {
+                'number': m.number,
+                'date': str(m.date),
+                'status': m.status,
+                'supplier': m.supplier,
+                'supplier_identification': m.supplier_identification,
+                'origin_invoice_number': m.origin_invoice_number,
+                'fiscal_period': m.fiscal_period,
+                'access_key': m.access_key,
+                'authorization_number': m.authorization_number,
+                'authorization_date': m.authorization_date,
+                'environment': m.environment,
+                'items': items,
+            }
+            params = _get_params(request.tenant.id)
+            pdf = generate_withholding_pdf(ret_data, params, _tenant_dict(request.tenant))
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="retencion-{m.number}.pdf"'
+            return response
+        except WithholdingModel.DoesNotExist:
+            return Response({'error': 'Retención no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DispatchGuidePDFView(APIView):
+
+    def get(self, request, guide_id: int):
+        if error := _verify_tenant(request): return error
+        try:
+            from modules.tax_documents.invoicing.infrastructure.persistence.django_models import DispatchGuideModel
+            m = DispatchGuideModel.objects.get(id=guide_id, tenant_id=request.tenant.id)
+            items = [
+                {
+                    'internal_code': i.internal_code,
+                    'description': i.description,
+                    'quantity': str(i.quantity),
+                }
+                for i in m.items.all()
+            ]
+            guide_data = {
+                'number': m.number,
+                'date_emission': str(m.date_emission),
+                'start_date': str(m.start_date),
+                'end_date': str(m.end_date),
+                'starting_address': m.starting_address,
+                'carrier_ruc': m.carrier_ruc,
+                'carrier_name': m.carrier_name,
+                'vehicle_plate': m.vehicle_plate,
+                'recipient_id': m.recipient_id,
+                'recipient_name': m.recipient_name,
+                'recipient_address': m.recipient_address,
+                'transfer_reason': m.transfer_reason,
+                'route': m.route,
+                'origin_doc_number': m.origin_doc_number,
+                'origin_doc_auth': m.origin_doc_auth,
+                'status': m.status,
+                'access_key': m.access_key,
+                'authorization_number': m.authorization_number,
+                'authorization_date': m.authorization_date,
+                'environment': m.environment,
+                'items': items,
+            }
+            params = _get_params(request.tenant.id)
+            pdf = generate_dispatch_guide_pdf(guide_data, params, _tenant_dict(request.tenant))
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="guia-{m.number}.pdf"'
+            return response
+        except DispatchGuideModel.DoesNotExist:
+            return Response({'error': 'Guía de remisión no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+
+class PurchaseSettlementPDFView(APIView):
+
+    def get(self, request, settlement_id: int):
+        if error := _verify_tenant(request): return error
+        try:
+            from modules.tax_documents.invoicing.infrastructure.persistence.django_models import PurchaseSettlementModel
+            m = PurchaseSettlementModel.objects.get(id=settlement_id, tenant_id=request.tenant.id)
+            items = [
+                {
+                    'product_code': i.product_code,
+                    'description': i.description,
+                    'quantity': str(i.quantity),
+                    'unit_price': str(i.unit_price),
+                    'discount': str(i.discount or '0'),
+                    'vat_rate': str(i.vat_rate or '15'),
+                    'subtotal': str(i.quantity * i.unit_price - (i.discount or 0)),
+                }
+                for i in m.items.all()
+            ]
+            settlement_data = {
+                'number': m.number,
+                'date': str(m.date),
+                'supplier': m.supplier,
+                'supplier_identification': m.supplier_identification,
+                'supplier_address': m.supplier_address,
+                'supplier_email': m.supplier_email,
+                'payment_method': m.payment_method,
+                'notes': m.notes,
+                'subtotal_0': str(m.subtotal_0),
+                'subtotal_iva': str(m.subtotal_iva),
+                'total_discount': '0.00',
+                'vat': str(m.vat),
+                'total': str(m.total),
+                'status': m.status,
+                'access_key': m.access_key,
+                'authorization_number': m.authorization_number,
+                'authorization_date': m.authorization_date,
+                'environment': m.environment,
+                'items': items,
+            }
+            params = _get_params(request.tenant.id)
+            pdf = generate_purchase_settlement_pdf(settlement_data, params, _tenant_dict(request.tenant))
+            response = HttpResponse(pdf, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="liquidacion-{m.number}.pdf"'
+            return response
+        except PurchaseSettlementModel.DoesNotExist:
+            return Response({'error': 'Liquidación de compra no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class QuotePDFView(APIView):
 

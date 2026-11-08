@@ -119,7 +119,8 @@ class DjangoPOSBillingService(POSBillingService):
         )
         return {
             'invoice_id': factura.id,
-            'invoice_number': factura.number
+            'invoice_number': factura.number,
+            'access_key': getattr(factura, 'access_key', '')
         }
 
     def emit_invoice(self, tenant_id: int, invoice_id: int, issuer: dict) -> None:

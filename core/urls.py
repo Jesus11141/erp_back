@@ -40,4 +40,6 @@ urlpatterns = [
     path('api/ai/', include('modules.ai_assistant.infrastructure.api.urls')),
     path('api/auditoria/', include('modules.auditoria.infrastructure.urls')),
     path('api/accounting/', include('modules.accounting.infrastructure.api.urls')),
+    path('api/compras/', include('modules.compras.infrastructure.api.urls')),
+    path('api/importador/', include('modules.importador.infrastructure.api.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

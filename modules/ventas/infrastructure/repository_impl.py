@@ -199,23 +199,47 @@ class DjangoOrderRepository(OrderRepository):
     def delete(self, order_id: int):
         OrderModel.objects.filter(id=order_id).delete()
 
+def _infer_sri_code(name: str) -> str:
+    n = (name or '').lower()
+    if 'efectivo' in n or 'cash' in n:
+        return '01'
+    if 'débito' in n or 'debito' in n:
+        return '16'
+    if 'crédito' in n or 'credito' in n or 'tarjeta' in n or 'card' in n:
+        return '19'
+    if any(k in n for k in ['transfer', 'banco', 'depósito', 'deposito', 'cheque', 'pichincha', 'guayaquil', 'produbanco', 'pacifico', 'deuna', 'de una']):
+        return '20'
+    if 'compensaci' in n:
+        return '15'
+    if 'dinero elect' in n:
+        return '17'
+    if 'prepago' in n:
+        return '18'
+    if 'endoso' in n:
+        return '21'
+    return '20'
+
 class DjangoPaymentMethodRepository(PaymentMethodRepository):
     def _to_entity(self, m) -> PaymentMethod:
+        sri_code = getattr(m, 'sri_code', None) or _infer_sri_code(m.name)
         return PaymentMethod(
             id=m.id,
             tenant_id=m.tenant_id,
             name=m.name,
             active=m.active,
-            requires_reference=m.requires_reference
+            requires_reference=m.requires_reference,
+            sri_code=sri_code or '01'
         )
 
     def save(self, p: PaymentMethod) -> PaymentMethod:
         from .django_models import PaymentMethodModel
+        sri = p.sri_code or _infer_sri_code(p.name)
         data = {
             'tenant_id': p.tenant_id,
             'name': p.name,
             'active': p.active,
-            'requires_reference': p.requires_reference
+            'requires_reference': p.requires_reference,
+            'sri_code': sri or '01'
         }
         if p.id:
             PaymentMethodModel.objects.filter(id=p.id, tenant_id=p.tenant_id).update(**data)

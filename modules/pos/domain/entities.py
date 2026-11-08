@@ -88,6 +88,8 @@ class POSSale:
     status: str = 'pending'          # 'pending', 'completed', 'cancelled'
     created_at: Optional[datetime] = None
     invoice_id: Optional[int] = None
+    invoice_number: Optional[str] = None
+    access_key: Optional[str] = None
     reference_number: Optional[str] = None
     vat_rate: Decimal = Decimal('0.12')
     document_type: str = '01'

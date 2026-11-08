@@ -46,7 +46,8 @@ class TenantMiddleware:
             request.tenant = tenant
 
         path = request.path_info
-        if request.tenant and not path.startswith('/api/superadmin/') and not path.startswith('/admin/'):
+        exempt_paths = ('/api/superadmin/', '/admin/', '/api/tenant/config', '/api/auth/')
+        if request.tenant and not any(path.startswith(p) for p in exempt_paths):
             from .django_models import TenantModel
             db_tenant = TenantModel.objects.filter(id=request.tenant.id).first()
             if db_tenant:

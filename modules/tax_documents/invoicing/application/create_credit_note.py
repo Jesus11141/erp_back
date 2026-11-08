@@ -21,11 +21,16 @@ class CreateCreditNote:
         estab = issuer.get('establecimiento')
         pto = issuer.get('punto_emision')
         if not estab:
-            raise BusinessError('El parÃ¡metro "establecimiento" no estÃ¡ configurado en el sistema.', field='establecimiento', code='CONFIG_MISSING')
+            raise BusinessError('El parámetro "establecimiento" no está configurado en el sistema.', field='establecimiento', code='CONFIG_MISSING')
         if not pto:
-            raise BusinessError('El parÃ¡metro "punto_emision" no estÃ¡ configurado en el sistema.', field='punto_emision', code='CONFIG_MISSING')
+            raise BusinessError('El parámetro "punto_emision" no está configurado en el sistema.', field='punto_emision', code='CONFIG_MISSING')
 
-        # 1. Obtener siguiente nÃºmero secuencial
+        # Control de Período Contable
+        target_date = data.get('date') or date.today()
+        from modules.contabilidad.application.period_service import validate_accounting_period
+        validate_accounting_period(tenant_id, target_date, action_desc='emitir notas de crédito')
+
+        # 1. Obtener siguiente número secuencial
         number = self.nc_repo.next_number(
             tenant_id,
             estab,

@@ -25,7 +25,9 @@ class AdjustStock:
         except ImportError:
             is_composite_enabled = False
 
-        if is_composite_enabled and product.is_composite and type in ('out', 'salida'):
+        is_dish = getattr(product, 'product_type', 'goods') == 'dish'
+
+        if (is_composite_enabled or is_dish) and product.is_composite and type in ('out', 'salida'):
             # Composite product logic: explode into components
             from ..infrastructure.django_models import ProductComponentModel
             components = ProductComponentModel.objects.filter(tenant_id=tenant_id, product_id=product_id)
@@ -42,6 +44,9 @@ class AdjustStock:
                         user_id=user_id
                     )
                 # Return the main product without adjusting its stock
+                return product
+            if is_dish:
+                # Dish without a recipe: nothing to deduct, never touch the dish's own stock
                 return product
 
         previous_stock = product.current_stock

@@ -234,8 +234,8 @@ class DjangoPOSSaleRepository(POSSaleRepository):
             for item in sale.items:
                 POSSaleItemModel.objects.create(
                     sale=m,
-                    product_id=item.product_id,
-                    code=item.code,
+                    product_id=int(item.product_id) if item.product_id else 0,
+                    code=item.code or 'REST',
                     description=item.description,
                     quantity=item.quantity,
                     unit_price=item.unit_price,

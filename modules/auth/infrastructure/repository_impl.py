@@ -12,7 +12,22 @@ class DjangoUserRepository(UserRepository):
         perms = list(model.permissions) if model.permissions else []
         if model.custom_role and model.custom_role.permissions:
             perms.extend(model.custom_role.permissions)
-            perms = list(set(perms))
+            
+        if not perms and model.role:
+            permissions_by_role = {
+                'superadmin': ['*'],
+                'admin':       ['facturacion.*', 'inventario.*', 'ventas.*', 'rrhh.*', 'compras.*', 'reportes.*', 'restaurante.*'],
+                'vendedor':    ['ventas.*', 'facturacion.ver', 'facturacion.crear'],
+                'contador':    ['facturacion.*', 'contabilidad.*'],
+                'almacenista': ['inventario.*'],
+                'rrhh':        ['rrhh.*'],
+                'mesero':      ['restaurante.mesas', 'restaurante.pedidos'],
+                'cajero':      ['restaurante.mesas', 'restaurante.cobrar', 'ventas.pos', 'facturacion.ver', 'facturacion.crear'],
+                'cocinero':    ['restaurante.cocina'],
+            }
+            perms.extend(permissions_by_role.get(model.role, []))
+
+        perms = list(set(perms))
             
         return User(
             id=model.id,

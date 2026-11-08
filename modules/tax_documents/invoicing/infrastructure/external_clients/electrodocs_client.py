@@ -186,7 +186,7 @@ def sign_invoice_via_go(storage_url: str, cert_path: str, cert_pass: str) -> str
     return data["data"]["storage_url"]
 
 
-def send_receipt_via_go(signed_storage_url: str, environment: str, issuer: dict, tenant_id: int, invoice_id: int, doc_type: str = 'invoice') -> dict:
+def send_receipt_via_go(signed_storage_url: str, environment: str, issuer: dict, tenant_id: int, invoice_id: int, doc_type: str = 'invoice', comprobant_code: str = '01') -> dict:
     url = f"{get_electrodocs_url()}/v1/notifier/government"
     
     payload = {
@@ -206,7 +206,7 @@ def send_receipt_via_go(signed_storage_url: str, environment: str, issuer: dict,
         "company_ruc": issuer.get('ruc', ''),
         "branch_office": issuer.get('establecimiento', '001'),
         "point_of_sale": issuer.get('punto_emision', '001'),
-        "comprobant_code": "01",
+        "comprobant_code": comprobant_code,
         "metadata": {
             "tenant_id": str(tenant_id),
             "invoice_id": str(invoice_id),

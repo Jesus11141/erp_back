@@ -15,6 +15,10 @@ class Employee:
     hire_date: date
     salary: Decimal
     contract_type: str  # full_time, part_time, freelance
+    identification: str = ''
+    bank_name: str = ''
+    bank_account_type: str = 'ahorros'
+    bank_account_number: str = ''
     cash_register_pin: str = ''
     active: bool = True
     has_iess: bool = False
@@ -104,6 +108,7 @@ class Payroll:
     reserve_funds: Decimal = Decimal('0')
     net_salary: Decimal = Decimal('0')
     status: str = 'draft'  # draft, approved, paid
+    employee_identification: str = ''
 
     @property
     def total_net(self) -> Decimal:

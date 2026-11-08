@@ -15,6 +15,8 @@ def _employee_dict(e, tenant_id):
     return {
         'id': e.id,
         'name': e.name,
+        'identification': getattr(e, 'identification', '') or '',
+        'cedula': getattr(e, 'identification', '') or '',
         'email': e.email,
         'phone': e.phone,
         'position': e.position,
@@ -27,6 +29,9 @@ def _employee_dict(e, tenant_id):
         'has_iess': getattr(e, 'has_iess', False),
         'accumulates_13th': getattr(e, 'accumulates_13th', True),
         'accumulates_14th': getattr(e, 'accumulates_14th', True),
+        'bank_name': getattr(e, 'bank_name', '') or '',
+        'bank_account_type': getattr(e, 'bank_account_type', 'ahorros') or 'ahorros',
+        'bank_account_number': getattr(e, 'bank_account_number', '') or '',
         'active_dependents_count': getattr(e, 'active_dependents_count', 0)
     }
 
@@ -96,6 +101,29 @@ class EmployeeDetailView(APIView):
         employee.cash_register_pin = cash_register_pin
         if active is not None:
             employee.active = bool(active)
+            
+        identification = request.data.get('cedula', request.data.get('identification'))
+        if identification is not None:
+            employee.identification = str(identification).strip()
+            
+        if 'has_iess' in request.data:
+            employee.has_iess = bool(request.data['has_iess'])
+        if 'accumulates_13th' in request.data:
+            employee.accumulates_13th = bool(request.data['accumulates_13th'])
+        if 'accumulates_14th' in request.data:
+            employee.accumulates_14th = bool(request.data['accumulates_14th'])
+            
+        bank_name = request.data.get('bank_name', request.data.get('banco'))
+        if bank_name is not None:
+            employee.bank_name = str(bank_name).strip()
+            
+        bank_acc_type = request.data.get('bank_account_type', request.data.get('tipo_cuenta_banco'))
+        if bank_acc_type is not None:
+            employee.bank_account_type = str(bank_acc_type).strip()
+            
+        bank_acc_num = request.data.get('bank_account_number', request.data.get('numero_cuenta_banco'))
+        if bank_acc_num is not None:
+            employee.bank_account_number = str(bank_acc_num).strip()
             
         repo.save(employee)
         return Response(_employee_dict(employee, request.tenant.id))
@@ -296,6 +324,7 @@ def _payroll_dict(n):
         'net_salary': str(n.net_salary),
         'total_net': str(n.total_net),
         'status': n.status,
+        'employee_identification': getattr(n, 'employee_identification', '') or '',
     }
 
 class PayrollsView(APIView):
@@ -404,3 +433,49 @@ class JobPositionDetailView(APIView):
             return Response({'message': 'Job position deleted'})
         except Exception:
             return Response({'error': 'Cannot delete because it is in use'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class IESSFlatFileView(APIView):
+    def get(self, request):
+        if e := verify_module(request): return e
+        from django.http import HttpResponse
+        from ...application.payroll_exporter import PayrollExporter
+        
+        period_start = request.query_params.get('period_start')
+        period_end = request.query_params.get('period_end')
+        format_type = request.query_params.get('format', 'txt').lower()
+        
+        if not period_start or not period_end:
+            return Response({'error': 'Parámetros period_start y period_end requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        try:
+            if format_type == 'csv':
+                file_data = PayrollExporter.generate_iess_csv(request.tenant.id, period_start, period_end)
+            else:
+                file_data = PayrollExporter.generate_iess_flat_file(request.tenant.id, period_start, period_end)
+                
+            response = HttpResponse(file_data['content'], content_type=file_data['mimetype'])
+            response['Content-Disposition'] = f'attachment; filename="{file_data["filename"]}"'
+            return response
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PayrollPDFView(APIView):
+    def get(self, request, payroll_id):
+        if e := verify_module(request): return e
+        from django.http import HttpResponse
+        from ...application.payroll_exporter import PayrollExporter
+        
+        try:
+            buffer = PayrollExporter.generate_payroll_pdf(payroll_id, request.tenant.id)
+            response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="rol_pago_{payroll_id}.pdf"'
+            return response
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

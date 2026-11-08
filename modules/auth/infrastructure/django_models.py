@@ -73,11 +73,14 @@ class UserModel(AbstractBaseUser, PermissionsMixin):
 
         permissions_by_role = {
             'superadmin': ['*'],
-            'admin':       ['facturacion.*', 'inventario.*', 'ventas.*', 'rrhh.*', 'compras.*', 'reportes.*'],
+            'admin':       ['facturacion.*', 'inventario.*', 'ventas.*', 'rrhh.*', 'compras.*', 'reportes.*', 'restaurante.*'],
             'vendedor':    ['ventas.*', 'facturacion.ver', 'facturacion.crear'],
             'contador':    ['facturacion.*', 'contabilidad.*'],
             'almacenista': ['inventario.*'],
             'rrhh':        ['rrhh.*'],
+            'mesero':      ['restaurante.mesas', 'restaurante.pedidos'],
+            'cajero':      ['restaurante.mesas', 'restaurante.cobrar', 'ventas.pos', 'facturacion.ver', 'facturacion.crear'],
+            'cocinero':    ['restaurante.cocina'],
         }
         permissions = permissions_by_role.get(self.role, [])
         if '*' in permissions:

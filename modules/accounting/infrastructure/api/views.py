@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import json
 from django.views.decorators.csrf import csrf_exempt
 from modules.accounting.application.extractor_use_cases import SetupSriCredentialsUseCase, RunSriExtractionUseCase
@@ -292,3 +292,61 @@ def get_outbox_documents(request):
             })
         return JsonResponse(data, safe=False)
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+
+@csrf_exempt
+def ats_summary_view(request):
+    """
+    Retorna métricas del ATS para el período solicitado (año y mes),
+    incluyendo totales de ventas, compras, anulados y alertas previas.
+    """
+    if request.method in ('GET', 'POST'):
+        try:
+            if request.method == 'GET':
+                year = int(request.GET.get('year', 2026))
+                month = int(request.GET.get('month', 1))
+            else:
+                data = json.loads(request.body) if request.body else {}
+                year = int(data.get('year', 2026))
+                month = int(data.get('month', 1))
+
+            tenant_id = request.tenant.id if hasattr(request, 'tenant') else int(request.GET.get('tenant_id', 1) if request.method == 'GET' else data.get('tenant_id', 1))
+            
+            from modules.accounting.application.ats_generator import GetAtsSummaryUseCase
+            use_case = GetAtsSummaryUseCase()
+            summary = use_case.execute(tenant_id=tenant_id, year=year, month=month)
+            return JsonResponse({'status': 'success', 'data': summary})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+
+@csrf_exempt
+def ats_download_view(request):
+    """
+    Genera y descarga el archivo XML del ATS del período especificado,
+    cumpliendo con la estructura DIMM Anexos del SRI.
+    """
+    if request.method in ('GET', 'POST'):
+        try:
+            if request.method == 'GET':
+                year = int(request.GET.get('year', 2026))
+                month = int(request.GET.get('month', 1))
+            else:
+                data = json.loads(request.body) if request.body else {}
+                year = int(data.get('year', 2026))
+                month = int(data.get('month', 1))
+
+            tenant_id = request.tenant.id if hasattr(request, 'tenant') else int(request.GET.get('tenant_id', 1) if request.method == 'GET' else data.get('tenant_id', 1))
+
+            from modules.accounting.application.ats_generator import GenerateAtsXmlUseCase
+            use_case = GenerateAtsXmlUseCase()
+            xml_content = use_case.execute(tenant_id=tenant_id, year=year, month=month)
+
+            filename = f"ATS_{month:02d}_{year}.xml"
+            response = HttpResponse(xml_content, content_type='application/xml; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)

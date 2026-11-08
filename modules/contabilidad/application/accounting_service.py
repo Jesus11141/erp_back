@@ -53,6 +53,11 @@ class AccountingService:
                 "A journal entry requires at least 2 lines (one debit and one credit)"
             )
 
+        # Control de Período Contable / Cierre Fiscal
+        target_date = entry_date or date.today()
+        from .period_service import validate_accounting_period
+        validate_accounting_period(tenant_id, target_date, user_role='contador', action_desc='registrar asientos en el libro diario')
+
         total_debit  = Decimal('0.00')
         total_credit = Decimal('0.00')
         entry_lines  = []

@@ -8,15 +8,8 @@ CATALOG = {
         'empresa_nombre':        {'label': 'Nombre de la empresa',      'type': 'text',    'default': ''},
         'empresa_rfc':           {'label': 'RFC / RUC',                  'type': 'text',    'default': ''},
         'empresa_representante': {'label': 'Director / Representante',   'type': 'text',    'default': ''},
-        'empresa_direccion':     {'label': 'Dirección',                  'type': 'text',    'default': ''},
-        'empresa_telefono':      {'label': 'Teléfonos de contacto',     'type': 'text',    'default': ''},
-        'empresa_email':         {'label': 'Email',                      'type': 'text',    'default': ''},
-        'moneda':             {'label': 'Moneda',                     'type': 'text',    'default': 'USD'},
-        'moneda_simbolo':     {'label': 'Símbolo moneda',             'type': 'text',    'default': '$'},
-        'logo_url':              {'label': 'Logo de la empresa',         'type': 'image',   'default': ''},
-        'empresa_nombre':        {'label': 'Nombre de la empresa',      'type': 'text',    'default': ''},
-        'empresa_rfc':           {'label': 'RFC / RUC',                  'type': 'text',    'default': ''},
-        'empresa_representante': {'label': 'Director / Representante',   'type': 'text',    'default': ''},
+        'empresa_contador':      {'label': 'Contador Público (Nombre)', 'type': 'text',    'default': ''},
+        'empresa_contador_ruc':  {'label': 'RUC / Matrícula Contador',  'type': 'text',    'default': ''},
         'empresa_direccion':     {'label': 'Dirección',                  'type': 'text',    'default': ''},
         'empresa_telefono':      {'label': 'Teléfonos de contacto',     'type': 'text',    'default': ''},
         'empresa_email':         {'label': 'Email',                      'type': 'text',    'default': ''},
@@ -91,6 +84,24 @@ CATALOG = {
     },
     'technical_service': {
         'tipos_dispositivos': {'label': 'Tipos de Dispositivos', 'type': 'list', 'default': 'Celular, Computadora, Tablet, Consola'}
+    },
+    'correo': {
+        'smtp_host':          {'label': 'Servidor SMTP (ej. smtp.gmail.com)', 'type': 'text',     'default': ''},
+        'smtp_port':          {'label': 'Puerto SMTP (ej. 587 o 465)',         'type': 'number',   'default': '587'},
+        'smtp_user':          {'label': 'Usuario / Correo Remitente',          'type': 'text',     'default': ''},
+        'smtp_password':      {'label': 'Contraseña / Token de Aplicación',    'type': 'password', 'default': ''},
+        'smtp_use_tls':       {'label': 'Usar TLS / STARTTLS',                'type': 'boolean',  'default': 'true'},
+        'smtp_use_ssl':       {'label': 'Usar SSL directo (Puerto 465)',       'type': 'boolean',  'default': 'false'},
+        'smtp_from_name':     {'label': 'Nombre Visible del Remitente',        'type': 'text',     'default': ''},
+        'enviar_automatico':  {'label': 'Enviar comprobante automáticamente al autorizar', 'type': 'boolean', 'default': 'true'},
+    },
+    'restaurantes': {
+        'modalidad_cobro': {
+            'label': 'Modalidad de Cobro',
+            'type': 'options',
+            'default': 'post_pago',
+            'options': ['post_pago', 'pre_pago']
+        },
     }
 }
 

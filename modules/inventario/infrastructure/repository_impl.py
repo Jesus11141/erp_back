@@ -27,6 +27,7 @@ class DjangoProductRepository(ProductRepository):
             vat_rate=m.vat_rate,
             active=m.active,
             is_composite=getattr(m, 'is_composite', False),
+            product_type=getattr(m, 'product_type', 'goods'),
             image=(m.image.url if m.image else None),
         )
 
@@ -42,7 +43,8 @@ class DjangoProductRepository(ProductRepository):
             'unit': p.unit,
             'vat_rate': p.vat_rate,
             'active': p.active,
-            'is_composite': p.is_composite
+            'is_composite': p.is_composite,
+            'product_type': p.product_type,
         }
         if p.id:
             m = ProductModel.objects.get(id=p.id)
@@ -74,16 +76,16 @@ class DjangoProductRepository(ProductRepository):
             return None
 
     def list_by_tenant(self, tenant_id: int) -> List[Product]:
-        return [self._to_entity(m) for m in ProductModel.objects.filter(tenant_id=tenant_id, active=True)]
+        return [self._to_entity(m) for m in ProductModel.objects.filter(tenant_id=tenant_id, active=True).exclude(product_type='dish')]
 
     def list_low_stock(self, tenant_id: int) -> List[Product]:
         from django.db.models import F
-        qs = ProductModel.objects.filter(tenant_id=tenant_id, active=True).filter(current_stock__lte=F('minimum_stock'))
+        qs = ProductModel.objects.filter(tenant_id=tenant_id, active=True).exclude(product_type='dish').filter(current_stock__lte=F('minimum_stock'))
         return [self._to_entity(m) for m in qs]
 
     def search(self, query: str, tenant_id: int) -> List[Product]:
-        qs = ProductModel.objects.filter(tenant_id=tenant_id, active=True).filter(
-            name__icontains=query) | ProductModel.objects.filter(tenant_id=tenant_id, active=True).filter(code__icontains=query)
+        base = ProductModel.objects.filter(tenant_id=tenant_id, active=True).exclude(product_type='dish')
+        qs = base.filter(name__icontains=query) | base.filter(code__icontains=query)
         return [self._to_entity(m) for m in qs.distinct()]
 
 

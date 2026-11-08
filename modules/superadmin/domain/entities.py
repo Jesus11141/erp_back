@@ -4,9 +4,9 @@ from datetime import date, datetime
 from typing import List, Optional
 
 AVAILABLE_MODULES = [
-    'facturacion', 'ventas', 'inventario',
-    'compras', 'rrhh', 'contabilidad', 'pos', 'clinica', 'technical_service', 'auditoria', 'usuarios', 'roles', 'centros_costos',
-    'notas_venta', 'restaurantes', 'sri_perfil', 'sri_facturas'
+    'facturacion', 'ventas', 'inventario', 'compras', 'rrhh', 'contabilidad', 'accounting',
+    'pos', 'clinica', 'technical_service', 'auditoria', 'usuarios', 'roles', 'centros_costos',
+    'notas_venta', 'restaurantes', 'sri_perfil', 'sri_facturas', 'reportes'
 ]
 
 AVAILABLE_PLANS = ['basic', 'professional', 'enterprise']

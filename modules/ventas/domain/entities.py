@@ -34,6 +34,7 @@ class PaymentMethod:
     name: str
     active: bool = True
     requires_reference: bool = False
+    sri_code: Optional[str] = '01'
 
 @dataclass
 class Quotation:

@@ -1,8 +1,17 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.http import HttpResponse
 from django.db.models import Sum, F
 from ..django_models import AccountModel, JournalEntryLineModel, JournalEntryModel
+from ...application.financial_reports_exporter import (
+    fetch_balance_sheet_data,
+    fetch_pnl_data,
+    generate_balance_sheet_pdf,
+    generate_balance_sheet_excel,
+    generate_pnl_pdf,
+    generate_pnl_excel,
+)
 
 class GeneralLedgerView(APIView):
     def get(self, request):
@@ -58,126 +67,76 @@ class PnLView(APIView):
         tenant_id = request.tenant.id
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')
-
-        qs = JournalEntryLineModel.objects.filter(entry__tenant_id=tenant_id)
-        if start_date:
-            qs = qs.filter(entry__date__gte=start_date)
-        if end_date:
-            qs = qs.filter(entry__date__lte=end_date)
-
-        # Solo Ingresos y Egresos
-        qs = qs.filter(account__type__in=['ingreso', 'egreso'])
-
-        aggregations = qs.values(
-            'account__id', 'account__name', 'account__type'
-        ).annotate(
-            total_debit=Sum('debit'),
-            total_credit=Sum('credit')
-        )
-
-        ingresos = []
-        egresos = []
-        total_ingresos = 0
-        total_egresos = 0
-
-        for agg in aggregations:
-            debit = agg['total_debit'] or 0
-            credit = agg['total_credit'] or 0
-            acc_type = agg['account__type']
-            
-            if acc_type == 'ingreso':
-                bal = credit - debit
-                total_ingresos += bal
-                ingresos.append({'id': agg['account__id'], 'name': agg['account__name'], 'balance': bal})
-            elif acc_type == 'egreso':
-                bal = debit - credit
-                total_egresos += bal
-                egresos.append({'id': agg['account__id'], 'name': agg['account__name'], 'balance': bal})
-
-        utilidad_neta = total_ingresos - total_egresos
-
-        return Response({
-            'ingresos': ingresos,
-            'total_ingresos': total_ingresos,
-            'egresos': egresos,
-            'total_egresos': total_egresos,
-            'utilidad_neta': utilidad_neta
-        })
+        data = fetch_pnl_data(tenant_id, start_date=start_date, end_date=end_date)
+        return Response(data)
 
 class BalanceSheetView(APIView):
     # Balance General
     def get(self, request):
         tenant_id = request.tenant.id
-        date_up_to = request.query_params.get('date') # Balance up to a specific date
-        
-        qs = JournalEntryLineModel.objects.filter(entry__tenant_id=tenant_id)
-        if date_up_to:
-            qs = qs.filter(entry__date__lte=date_up_to)
+        date_up_to = request.query_params.get('date') or request.query_params.get('date_up_to')
+        data = fetch_balance_sheet_data(tenant_id, date_up_to=date_up_to)
+        return Response(data)
 
-        # Solo Activos, Pasivos, Patrimonio
-        # type 'is_active' = Activo
-        qs_balance = qs.filter(account__type__in=['is_active', 'pasivo', 'patrimonio'])
+class ExportBalanceSheetPDFView(APIView):
+    """Descarga oficial del Balance General en PDF corporativo."""
+    def get(self, request):
+        tenant_id = request.tenant.id
+        date_up_to = request.query_params.get('date') or request.query_params.get('date_up_to')
+        data = fetch_balance_sheet_data(tenant_id, date_up_to=date_up_to)
+        pdf_bytes = generate_balance_sheet_pdf(data, tenant_id, data['date_up_to'])
 
-        aggregations = qs_balance.values(
-            'account__id', 'account__name', 'account__type'
-        ).annotate(
-            total_debit=Sum('debit'),
-            total_credit=Sum('credit')
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"balance_general_{data['date_up_to']}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+class ExportBalanceSheetExcelView(APIView):
+    """Descarga oficial del Balance General en Excel corporativo."""
+    def get(self, request):
+        tenant_id = request.tenant.id
+        date_up_to = request.query_params.get('date') or request.query_params.get('date_up_to')
+        data = fetch_balance_sheet_data(tenant_id, date_up_to=date_up_to)
+        excel_bytes = generate_balance_sheet_excel(data, tenant_id, data['date_up_to'])
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
+        filename = f"balance_general_{data['date_up_to']}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
-        activos = []
-        pasivos = []
-        patrimonio = []
-        total_activos = 0
-        total_pasivos = 0
-        total_patrimonio = 0
+class ExportPnLPDFView(APIView):
+    """Descarga oficial del Estado de Resultados en PDF corporativo."""
+    def get(self, request):
+        tenant_id = request.tenant.id
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        data = fetch_pnl_data(tenant_id, start_date=start_date, end_date=end_date)
+        pdf_bytes = generate_pnl_pdf(data, tenant_id, data['start_date'], data['end_date'])
 
-        for agg in aggregations:
-            debit = agg['total_debit'] or 0
-            credit = agg['total_credit'] or 0
-            acc_type = agg['account__type']
-            
-            if acc_type == 'is_active':
-                bal = debit - credit
-                total_activos += bal
-                activos.append({'id': agg['account__id'], 'name': agg['account__name'], 'balance': bal})
-            elif acc_type == 'pasivo':
-                bal = credit - debit
-                total_pasivos += bal
-                pasivos.append({'id': agg['account__id'], 'name': agg['account__name'], 'balance': bal})
-            elif acc_type == 'patrimonio':
-                bal = credit - debit
-                total_patrimonio += bal
-                patrimonio.append({'id': agg['account__id'], 'name': agg['account__name'], 'balance': bal})
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"estado_resultados_{data['start_date']}_{data['end_date']}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
-        # Calculate Net Income from P&L up to that date, which rolls into Equity (Patrimonio)
-        qs_pnl = qs.filter(account__type__in=['ingreso', 'egreso']).aggregate(
-            debit=Sum('debit'), credit=Sum('credit')
+class ExportPnLExcelView(APIView):
+    """Descarga oficial del Estado de Resultados en Excel corporativo."""
+    def get(self, request):
+        tenant_id = request.tenant.id
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        data = fetch_pnl_data(tenant_id, start_date=start_date, end_date=end_date)
+        excel_bytes = generate_pnl_excel(data, tenant_id, data['start_date'], data['end_date'])
+
+        response = HttpResponse(
+            excel_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        # Note: we need to group by type manually to get exact income vs expense, or just net
-        # Net = Total Ingresos (Credit - Debit) - Total Egresos (Debit - Credit)
-        # Net = (Credit(I) - Debit(I)) - (Debit(E) - Credit(E))
-        # Net = Credit(I) - Debit(I) - Debit(E) + Credit(E)
-        # Net = Total Credit (I+E) - Total Debit (I+E)
-        net_income = (qs_pnl['credit'] or 0) - (qs_pnl['debit'] or 0)
-        
-        if net_income != 0:
-            patrimonio.append({
-                'id': 'utilidad_ejercicio',
-                'name': 'Utilidad del Ejercicio',
-                'balance': net_income
-            })
-            total_patrimonio += net_income
-
-        return Response({
-            'activos': activos,
-            'total_activos': total_activos,
-            'pasivos': pasivos,
-            'total_pasivos': total_pasivos,
-            'patrimonio': patrimonio,
-            'total_patrimonio': total_patrimonio,
-            'ecuacion_balance': total_activos == (total_pasivos + total_patrimonio)
-        })
+        filename = f"estado_resultados_{data['start_date']}_{data['end_date']}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
 
 class AccountLedgerView(APIView):
     def get(self, request, account_id):

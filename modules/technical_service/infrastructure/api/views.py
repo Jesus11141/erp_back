@@ -22,8 +22,8 @@ use_cases = TechnicalServiceUseCases(
 
 class WorkOrderListView(APIView):
     def get(self, request):
-        if not request.tenant:
-            return Response({'error': 'Tenant not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('technical_service'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         tenant_id = request.tenant.id
         orders = use_cases.list_work_orders.execute(tenant_id)
         
@@ -59,8 +59,8 @@ class WorkOrderListView(APIView):
         return Response(data)
 
     def post(self, request):
-        if not request.tenant:
-            return Response({'error': 'Tenant not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('technical_service'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         tenant_id = request.tenant.id
         user_id = request.user.id if hasattr(request, 'user') and request.user else None
         data = request.data
@@ -73,8 +73,8 @@ class WorkOrderListView(APIView):
 
 class WorkOrderStatusView(APIView):
     def patch(self, request, pk):
-        if not request.tenant:
-            return Response({'error': 'Tenant not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('technical_service'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         tenant_id = request.tenant.id
         new_status = request.data.get('status')
         
@@ -91,8 +91,8 @@ class WorkOrderStatusView(APIView):
 
 class WorkOrderPayView(APIView):
     def post(self, request, pk):
-        if not request.tenant:
-            return Response({'error': 'Tenant not found'}, status=status.HTTP_404_NOT_FOUND)
+        if not request.tenant or not request.tenant.has_module('technical_service'):
+            return Response({'error': 'Module not active or company not found'}, status=status.HTTP_403_FORBIDDEN)
         tenant_id = request.tenant.id
         user_id = request.user.id if hasattr(request, 'user') and request.user else None
         

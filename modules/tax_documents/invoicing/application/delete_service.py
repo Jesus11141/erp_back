@@ -12,6 +12,10 @@ class CancelInvoice:
         if not invoice:
             raise ValueError('Factura no encontrada')
 
+        # Control de Período Contable / Cierre Fiscal
+        from modules.contabilidad.application.period_service import validate_accounting_period
+        validate_accounting_period(tenant_id, invoice.date, action_desc='anular facturas de venta')
+
         # Control Tributario: Validar vigencia en el SRI
         if invoice.access_key:
             from modules.tax_documents.invoicing.infrastructure.external_clients.sri_cliente import consultar_autorizacion

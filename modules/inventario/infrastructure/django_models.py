@@ -16,6 +16,8 @@ class ProductModel(models.Model):
     active = models.BooleanField(default=True, db_column='activo')
     is_composite = models.BooleanField(default=False, db_column='es_compuesto')
     image = models.ImageField(upload_to='productos/', blank=True, null=True, db_column='imagen')
+    # 'dish' products are owned by the restaurant module (recipe holders) and hidden from retail listings
+    product_type = models.CharField(max_length=10, default='goods', db_column='tipo_producto')
 
     class Meta:
         app_label = 'inventario'

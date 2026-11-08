@@ -1048,7 +1048,84 @@ def generate_closure_summary_excel(report_data: dict, params: dict, tenant: dict
     return buffer.getvalue()
 
 
-
-
-
-
+def generate_chart_of_accounts_excel(accounts: list, params: dict, tenant: dict) -> bytes:
+    """Genera Excel ejecutivo del Plan de Cuentas Contable con formato profesional."""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plan de Cuentas"
+    ws.views.sheetView[0].showGridLines = True
+    
+    color_hex = _hex_to_openpyxl(tenant.get('primary_color', '#1976D2'))
+    empresa = params.get('general', {}).get('empresa_nombre', {}).get('valor', tenant.get('name', 'ERP'))
+    
+    # 1. Banner
+    _aplicar_banner_titulo(ws, color_hex, f"PLAN DE CUENTAS - {empresa}", 4)
+    
+    # 2. Encabezados
+    headers = ["Código Contable", "Nombre de la Cuenta", "Tipo de Cuenta", "Nivel"]
+    fill_header, font_header, align_header = _estilo_encabezado(color_hex)
+    
+    for col_idx, text in enumerate(headers, 1):
+        cell = ws.cell(row=4, column=col_idx, value=text)
+        cell.fill = fill_header
+        cell.font = font_header
+        cell.alignment = align_header
+        cell.border = _borde_delgado()
+    ws.row_dimensions[4].height = 26
+    
+    # 3. Datos
+    borde = _borde_delgado()
+    tipo_map = {
+        'is_active': 'Activo',
+        'activo': 'Activo',
+        'pasivo': 'Pasivo',
+        'patrimonio': 'Patrimonio',
+        'ingreso': 'Ingreso',
+        'egreso': 'Egreso',
+        'costo': 'Costo',
+    }
+    
+    for idx, acc in enumerate(accounts, 5):
+        code = str(acc.get('code', ''))
+        name = str(acc.get('name', ''))
+        raw_type = str(acc.get('type', '')).lower()
+        tipo_label = tipo_map.get(raw_type, raw_type.capitalize())
+        
+        dots = code.count('.')
+        nivel = f"Nivel {dots + 1}"
+        es_base = code.endswith('.00.00') or dots == 0
+        
+        color_fila = 'F1F5F9' if es_base else ('F8FAFC' if idx % 2 == 0 else 'FFFFFF')
+        fill_row = PatternFill(start_color=color_fila, end_color=color_fila, fill_type='solid')
+        
+        # Celda Código (Formato Texto explícito '@' para preservar ceros iniciales como 0000 o 01)
+        cell_code = ws.cell(row=idx, column=1, value=code)
+        cell_code.number_format = '@'
+        cell_code.alignment = Alignment(horizontal='left', vertical='center', indent=dots)
+        
+        # Celda Nombre
+        cell_name = ws.cell(row=idx, column=2, value=name)
+        cell_name.alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Celda Tipo
+        cell_tipo = ws.cell(row=idx, column=3, value=tipo_label)
+        cell_tipo.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Celda Nivel
+        cell_nivel = ws.cell(row=idx, column=4, value=nivel)
+        cell_nivel.alignment = Alignment(horizontal='center', vertical='center')
+        
+        font_style = Font(name='Segoe UI', size=10, bold=es_base)
+        for col_idx in range(1, 5):
+            c = ws.cell(row=idx, column=col_idx)
+            c.font = font_style
+            c.fill = fill_row
+            c.border = borde
+            
+        ws.row_dimensions[idx].height = 22
+        
+    _autoajustar_columnas(ws)
+    
+    buffer = BytesIO()
+    wb.save(buffer)
+    return buffer.getvalue()
